@@ -7,8 +7,9 @@
 
 | Claire ANOT-DELCOURT  | claire.anot-delcourt@ensea.fr  |
 | --------------------- | ------------------------------ |
+
 | Antoine BEAUVARLET    | antoine.beauvarlet@ensea.fr    |
-             
+| --------------------- | ------------------------------ |
 
 ## Encadré par :
 
