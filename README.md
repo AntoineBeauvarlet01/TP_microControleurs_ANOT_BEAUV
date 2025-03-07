@@ -23,72 +23,56 @@ avec leur mode par défaut, mais n’activez pas la BSP.
 ```
 int main(void) 
 {  
-
-//  Activation de l'horloge du GPIOA   
-    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;  
- 
-//  Configuration de PA5 en mode sortie  
-    GPIOA->MODER &= ~GPIO_MODER_MODE5_1;  
-    GPIOA->MODER |= GPIO_MODER_MODE5_0;  
- 
+    HAL_Init();
+	SystemClock_Config();
+	MX_GPIO_Init();
 
     while (1) {     
-
         HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 		HAL_Delay(1000);
     }  
 }  
 ```
-2. Testez l’USART2 connecté à la STLink interne.
+3. et 4. Testez l’USART2 connecté à la STLink interne.  Débrouillez-vous pour que la fonction printf fonctionne
 ```
-#include "stm32l476xx.h"
-void USART2_Init(void) 
+//Q4 :
+int __io_putchar(int chr)
 {
-//  Activation des horloges de l'USART2 et du GPIOA
-    RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
-    RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
+	HAL_UART_Transmit(&huart2, (uint8_t *)&chr, 1, HAL_MAX_DELAY);
 
-//  Configuration de PA2 (TX) et PA3 (RX) en mode alternatif
-    GPIOA->MODER &= ~(GPIO_MODER_MODE2_0 | GPIO_MODER_MODE3_0);
-    GPIOA->MODER |= (GPIO_MODER_MODE2_1 | GPIO_MODER_MODE3_1);
-
-//  Configuration de la fonction alternative pour PA2 et PA3 (AF7 pour USART2)
-    GPIOA->AFR[0] |= (7 << GPIO_AFRL_AFSEL2_Pos) | (7 << GPIO_AFRL_AFSEL3_Pos);
-    
-//  Configuration de l'USART2 (9600 bauds, 8 bits, pas de parité, 1 stop bit)
-    USART2->BRR = 80000000/9600;//pour une frequence de 80Mhz
-    USART2->CR1 |= USART_CR1_TE | USART_CR1_RE; // Activation de l'émetteur et du récepteur
-    USART2->CR1 |= USART_CR1_UE; // Activation de l'USART2
+	return chr;
 }
 
-void USART2_Transmit(char c) 
+int main(void)
 {
-    while (!(USART2->ISR & USART_ISR_TXE)); 
+//  Reset of all peripherals, Initializes the Flash interface and the Systick.
+	HAL_Init();
 
-//  Attendre que le tampon d'émission soit vide
-    USART2->TDR = c;
+//  Configure the system clock
+	SystemClock_Config();
+
+
+
+//  Initialize all configured peripherals
+	MX_GPIO_Init();
+	MX_USART2_UART_Init();
+
+	while (1)
+	{
+//  Q3 :
+//      HAL_UART_Transmit(&huart2, "Hello world\r\n", 13, 100); 
+
+//  Q4 :
+		printf("Hello world\r\n"); 
+
+		HAL_Delay(1000);
+		HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		HAL_Delay(1000);
+	}
 }
 
-char USART2_Receive(void) 
-{
-    while (!(USART2->ISR & USART_ISR_RXNE)); 
 
-//  Attendre qu'un caractère soit reçu
-    return USART2->RDR;
-}
-
-int main(void) {
-    USART2_Init();
-    while (1) 
-    {
-        char receivedChar = USART2_Receive();
-//      Echo du caractère reçu
-        USART2_Transmit(receivedChar); 
-    }
-}
 ```
-3. Débrouillez-vous pour que la fonction printf fonctionne
-
 
 # 2 Le GPIO Expander et le VU-Metre
 ## Configuration
