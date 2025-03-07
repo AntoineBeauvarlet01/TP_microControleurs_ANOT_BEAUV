@@ -21,12 +21,6 @@ avec leur mode par défaut, mais n’activez pas la BSP.
 2. Testez la LED LD2.
 #
 ```
-#include "stm32l476xx.h"  
-void delay(uint32_t time) 
-{
-    while(time--); 
-}  
-
 int main(void) 
 {  
 
