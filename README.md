@@ -40,17 +40,8 @@ int main(void)
 
     while (1) {     
 
-//      Allumage de la LED   
-        GPIOA->ODR |= GPIO_ODR_OD5;  
-
-//      Délai
-        delay(100000); 
-  
-//      Extinction de la LED  
-        GPIOA->ODR &= ~GPIO_ODR_OD5;  
-
-//      Délai  
-        delay(100000);
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+		HAL_Delay(1000);
     }  
 }  
 ```
