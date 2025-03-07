@@ -54,40 +54,55 @@ int main(void)
     }  
 }  
 ```
-1. Testez l’USART2 connecté à la STLink interne.
+2. Testez l’USART2 connecté à la STLink interne.
 ```
 #include "stm32l476xx.h"
-void USART2_Init(void) {
-    // Activation des horloges de l'USART2 et du GPIOA
+void USART2_Init(void) 
+{
+//  Activation des horloges de l'USART2 et du GPIOA
     RCC->APB1ENR1 |= RCC_APB1ENR1_USART2EN;
     RCC->AHB2ENR |= RCC_AHB2ENR_GPIOAEN;
-    // Configuration de PA2 (TX) et PA3 (RX) en mode alternatif
+
+//  Configuration de PA2 (TX) et PA3 (RX) en mode alternatif
     GPIOA->MODER &= ~(GPIO_MODER_MODE2_0 | GPIO_MODER_MODE3_0);
     GPIOA->MODER |= (GPIO_MODER_MODE2_1 | GPIO_MODER_MODE3_1);
-    // Configuration de la fonction alternative pour PA2 et PA3 (AF7 pour USART2)
+
+//  Configuration de la fonction alternative pour PA2 et PA3 (AF7 pour USART2)
     GPIOA->AFR[0] |= (7 << GPIO_AFRL_AFSEL2_Pos) | (7 << GPIO_AFRL_AFSEL3_Pos);
-    // Configuration de l'USART2 (9600 bauds, 8 bits, pas de parité, 1 stop bit)
+    
+//  Configuration de l'USART2 (9600 bauds, 8 bits, pas de parité, 1 stop bit)
     USART2->BRR = 80000000/9600;//pour une frequence de 80Mhz
     USART2->CR1 |= USART_CR1_TE | USART_CR1_RE; // Activation de l'émetteur et du récepteur
     USART2->CR1 |= USART_CR1_UE; // Activation de l'USART2
 }
-void USART2_Transmit(char c) {
-    while (!(USART2->ISR & USART_ISR_TXE)); // Attendre que le tampon d'émission soit vide
+
+void USART2_Transmit(char c) 
+{
+    while (!(USART2->ISR & USART_ISR_TXE)); 
+
+//  Attendre que le tampon d'émission soit vide
     USART2->TDR = c;
 }
-char USART2_Receive(void) {
-    while (!(USART2->ISR & USART_ISR_RXNE)); // Attendre qu'un caractère soit reçu
+
+char USART2_Receive(void) 
+{
+    while (!(USART2->ISR & USART_ISR_RXNE)); 
+
+//  Attendre qu'un caractère soit reçu
     return USART2->RDR;
 }
+
 int main(void) {
     USART2_Init();
-    while (1) {
+    while (1) 
+    {
         char receivedChar = USART2_Receive();
-        USART2_Transmit(receivedChar); // Echo du caractère reçu
+//      Echo du caractère reçu
+        USART2_Transmit(receivedChar); 
     }
 }
 ```
-1. Débrouillez-vous pour que la fonction printf fonctionne
+3. Débrouillez-vous pour que la fonction printf fonctionne
 
 
 # 2 Le GPIO Expander et le VU-Metre
