@@ -28,7 +28,7 @@ int main(void)
 	MX_GPIO_Init();
 
     while (1) {     
-        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+        HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);  
 		HAL_Delay(1000);
     }  
 }  
@@ -81,10 +81,25 @@ int main(void)
 >https://ww1.microchip.com/downloads/aemDocuments/documents/APID/ProductDocuments/DataSheets/MCP23017-Data-Sheet-DS20001952.pdf
 
 2. Sur le STM32, quel SPI est utilisé ?
-   
+>   High-Speed SPI Interface (MCP23S17) :
+>- 10 MHz (maximum)
+>- SPI1, SPI2 ou SPI3
+>- En remontant le circuit on arrive a soit SPI1 soit SPI3 
+>- Dans Cube IDE SPI1 est bloqué donc c'est `SPI3` qui est utilisé
+
+
+
+
 3. Quels sont les paramètres à configurer dans STM32CubeIDE ?
-   
-4. Configurez-les.
+
+| Nom | Valeur |
+| ------ | ------- |
+| Data Size| 8 Bits|
+| Clock Polarity | Low|
+|Clock Phase| 1 Edge|
+|Baud Rate Prescaler | 40Mbit/s|
+|First Bit | MSB First|
+
 
 ## Tests
 1. Faites clignoter une ou plusieurs LED.
