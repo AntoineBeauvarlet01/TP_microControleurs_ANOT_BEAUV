@@ -109,6 +109,9 @@ int main(void)
 
 ![Texte alternatif](chenillard.gif)
 ## Driver
+
+ON EST ICI - Piloter les LEDs avec TeraTerm (driver)
+
 1. Écrivez un driver pour piloter les LED. Utilisez une structure.
 
 2. Écrivez une fonction shell permettant d’allumer ou d’éteindre n’importe
