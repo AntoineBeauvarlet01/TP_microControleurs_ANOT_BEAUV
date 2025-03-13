@@ -104,6 +104,7 @@ int main(void)
 
 
 ## Tests
+![alt text](image-8.png)
 1. Faites clignoter une ou plusieurs LED.
    
 2. Pour toutes les tester, vous pouvez faire un chenillard (par exemple).
