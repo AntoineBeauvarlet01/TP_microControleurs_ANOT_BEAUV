@@ -10,7 +10,7 @@
 
 ## Encadré par :
 
-| Nicolsa PAPAZOGLOU    | nicolas.papazoglou@ensea.fr    |
+| Nicolas PAPAZOGLOU    | nicolas.papazoglou@ensea.fr    |
 | --------------------- | ------------------------------ |
 
 # 1 Démarrage
