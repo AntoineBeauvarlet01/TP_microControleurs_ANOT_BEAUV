@@ -1,0 +1,9 @@
+../Core/Src/main.c:61:5:__io_putchar	16	static
+../Core/Src/main.c:69:6:MCP23S17_WriteRegister	24	static
+../Core/Src/main.c:81:6:MCP23S17_Chenillard	24	static
+../Core/Src/main.c:99:5:main	8	static
+../Core/Src/main.c:168:6:SystemClock_Config	96	static
+../Core/Src/main.c:218:13:MX_SPI3_Init	8	static
+../Core/Src/main.c:258:13:MX_USART2_UART_Init	8	static
+../Core/Src/main.c:293:13:MX_GPIO_Init	48	static
+../Core/Src/main.c:343:6:Error_Handler	4	static,ignoring_inline_asm

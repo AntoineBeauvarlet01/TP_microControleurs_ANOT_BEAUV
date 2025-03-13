@@ -60,8 +60,8 @@ all: main-build
 main-build: TP_Syst_uC.elf secondary-outputs
 
 # Tool invocations
-TP_Syst_uC.elf TP_Syst_uC.map: $(OBJS) $(USER_OBJS) /home/student/Documents/TP_microControleurs_ANOT_BEAUV/firmware/STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "TP_Syst_uC.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"/home/student/Documents/TP_microControleurs_ANOT_BEAUV/firmware/STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="TP_Syst_uC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+TP_Syst_uC.elf TP_Syst_uC.map: $(OBJS) $(USER_OBJS) C:\Users\admin\Documents\COURS\ENSEA\3DA\Semestre_10\STM32CubeIDE\TP\TP_microControleurs_ANOT_BEAUV\firmware\STM32L476RGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "TP_Syst_uC.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\admin\Documents\COURS\ENSEA\3DA\Semestre_10\STM32CubeIDE\TP\TP_microControleurs_ANOT_BEAUV\firmware\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="TP_Syst_uC.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
