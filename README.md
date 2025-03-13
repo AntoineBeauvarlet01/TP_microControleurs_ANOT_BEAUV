@@ -114,7 +114,9 @@ int main(void)
 
 2. Écrivez une fonction shell permettant d’allumer ou d’éteindre n’importe
 quelle LED.
-![Texte alternatif](C:\Users\beauv\Desktop\ecole\ENSEA\3emeAnnee\TP_Systemes_microcontroleurs\TP_microControleurs_ANOT_BEAUV\VID_20250313_163446056.mp4)
+
+![Texte alternatif](chenillard.gif)
+
 # 3 Le CODEC Audio SGTL5000
 ## Configuration préalables
 Le CODEC a besoin de deux protocoles de communication :
