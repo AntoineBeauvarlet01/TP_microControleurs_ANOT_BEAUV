@@ -105,17 +105,15 @@ int main(void)
 
 ## Tests
 ![alt text](image-8.png)
-1. Faites clignoter une ou plusieurs LED.
-   
-2. Pour toutes les tester, vous pouvez faire un chenillard (par exemple).
+1. Faites clignoter une ou plusieurs LED et Pour toutes les tester, vous pouvez faire un chenillard (par exemple).
 
+![Texte alternatif](chenillard.gif)
 ## Driver
 1. Écrivez un driver pour piloter les LED. Utilisez une structure.
 
 2. Écrivez une fonction shell permettant d’allumer ou d’éteindre n’importe
 quelle LED.
 
-![Texte alternatif](chenillard.gif)
 
 # 3 Le CODEC Audio SGTL5000
 ## Configuration préalables
