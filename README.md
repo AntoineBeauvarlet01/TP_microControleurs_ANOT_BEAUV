@@ -116,8 +116,53 @@ ON EST ICI - Piloter les LEDs avec TeraTerm (driver)
 
 2. Écrivez une fonction shell permettant d’allumer ou d’éteindre n’importe
 quelle LED.
+```
+void MCP23S17_ClignoterLED(uint8_t num_LED, uint32_t delay) {
+    uint8_t port_A_data = 0xFF; // Toutes les LEDs éteintes par défaut
+    uint8_t port_B_data = 0xFF;
 
+    if (num_LED < 1 || num_LED > 16) {
+        // Numéro de LED invalide
+        return; // Ou gérer l'erreur d'une autre manière
+    }
 
+    switch (num_LED) {
+        case 1:  port_A_data &= ~(1 << 0); break;
+        case 2:  port_A_data &= ~(1 << 1); break;
+        case 3:  port_A_data &= ~(1 << 2); break;
+        case 4:  port_A_data &= ~(1 << 3); break;
+        case 5:  port_A_data &= ~(1 << 4); break;
+        case 6:  port_A_data &= ~(1 << 5); break;
+        case 7:  port_A_data &= ~(1 << 6); break;
+        case 8:  port_A_data &= ~(1 << 7); break;
+        case 9:  port_B_data &= ~(1 << 0); break;
+        case 10: port_B_data &= ~(1 << 1); break;
+        case 11: port_B_data &= ~(1 << 2); break;
+        case 12: port_B_data &= ~(1 << 3); break;
+        case 13: port_B_data &= ~(1 << 4); break;
+        case 14: port_B_data &= ~(1 << 5); break;
+        case 15: port_B_data &= ~(1 << 6); break;
+        case 16: port_B_data &= ~(1 << 7); break;
+    }
+
+    // Allumer la LED spécifiée
+    MCP23S17_WriteRegister(0x12, ~port_A_data);
+    MCP23S17_WriteRegister(0x13, ~port_B_data);
+    HAL_Delay(delay);
+
+    // Eteindre la LED
+    MCP23S17_WriteRegister(0x12, 0xFF);
+    MCP23S17_WriteRegister(0x13, 0xFF);
+    HAL_Delay(delay);
+}
+```
+Dans le main :
+```
+while (1) {
+        // Faire clignoter la LED 1 à 500 ms
+        MCP23S17_ClignoterLED(1, 500);
+}
+```
 # 3 Le CODEC Audio SGTL5000
 ## Configuration préalables
 Le CODEC a besoin de deux protocoles de communication :
