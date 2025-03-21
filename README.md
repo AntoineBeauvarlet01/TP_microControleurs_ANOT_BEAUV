@@ -210,6 +210,7 @@ Note Sans cette ligne, l’I2C ne fonctionne pas, parce que le CODEC ne
 reçoit pas d’horloge !
 ## 3.2 Configuration du CODEC par l’I2C
 1. À l’aide d’un oscilloscope, vérifiez la présence d’une horloge sur le signal MCLK.
+   On observe bien un retour sur la broche MCLK
    
 2. À l’aide de la fonction HAL_I2C_Mem_Read(), récupérez la valeur du registre CHIP_ID (addresse 0x0000). L’adresse I2C du CODEC est 0x14.
    
