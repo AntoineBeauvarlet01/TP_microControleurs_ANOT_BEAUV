@@ -18,10 +18,12 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "driver_led.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <stdint.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -40,11 +42,9 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
+/* USER CODE BEGIN PV */
 SPI_HandleTypeDef hspi3;
 UART_HandleTypeDef huart2;
-
-/* USER CODE BEGIN PV */
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -63,18 +63,6 @@ int __io_putchar(int chr)
 	HAL_UART_Transmit(&huart2, (uint8_t *)&chr, 1, HAL_MAX_DELAY);
 
 	return chr;
-}
-
-
-void MCP23S17_WriteRegister(uint8_t reg, uint8_t data) {
-	uint8_t buffer[3];
-	buffer[0] = 0x40;  			// Adresse avec bit de commande en écriture
-	buffer[1] = reg;            // Registre cible
-	buffer[2] = data;           // Donnée à écrire
-
-	HAL_GPIO_WritePin(VU_nCS_GPIO_Port, VU_nCS_Pin, RESET);
-	HAL_SPI_Transmit(&hspi3, buffer, 3, HAL_MAX_DELAY);
-	HAL_GPIO_WritePin(VU_nCS_GPIO_Port, VU_nCS_Pin, SET);
 }
 
 
@@ -133,8 +121,12 @@ int main(void)
 	MCP23S17_WriteRegister(0X00, 0X00); // DIR A as OUTPUT
 	MCP23S17_WriteRegister(0X01, 0X00); // DIR B as OUTPUT
 
-	MCP23S17_WriteRegister(0X12, 0XFF); // Eteins toutes les LEDs de A
-	MCP23S17_WriteRegister(0X13, 0XFF); // Eteins toutes les LEDs de B
+	//MCP23S17_WriteRegister(0X12, 0XFF); // Eteins toutes les LEDs de A
+	//MCP23S17_WriteRegister(0X13, 0XFF); // Eteins toutes les LEDs de B
+
+	uint8_t uart2_chr;
+
+	HAL_UART_Receive_IT(&huart2, &uart2_chr, 1); // Pour autoriser la 1ère réception
 
 	/* USER CODE END 2 */
 
@@ -152,7 +144,10 @@ int main(void)
 		//HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 		//HAL_Delay(1000);
 
-		MCP23S17_Chenillard(500);
+		//MCP23S17_Chenillard(500);
+
+		HAL_UART_Transmit(&huart2, (uint8_t *)&uart2_chr, 1, HAL_MAX_DELAY); // écho
+		HAL_UART_Receive_IT(&huart2, &uart2_chr, 1); // Pour ré-autoriser, à chaque fois, la réception
 
 		/* USER CODE END WHILE */
 
