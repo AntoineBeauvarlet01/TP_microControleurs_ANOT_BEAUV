@@ -77,7 +77,11 @@ void Error_Handler(void);
 #define VU_nCS_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
+#define DIR_GPIOA 0x00
+#define DIR_GPIOB 0x01
 
+#define ADDR_GPIOA 0x12
+#define ADDR_GPIOB 0x13
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

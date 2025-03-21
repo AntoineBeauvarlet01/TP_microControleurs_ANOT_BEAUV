@@ -66,14 +66,15 @@ int __io_putchar(int chr)
 }
 
 
-void MCP23S17_Chenillard(int delay)
+void MCP23S17_Chenillard()
 {
-	for (int i = 0; i < 8; i++)
-	{
-		uint8_t data_A = 1<<i, data_B = 1<<(7-i);
-		MCP23S17_WriteRegister(0X12, ~data_A);
-		MCP23S17_WriteRegister(0X13, ~data_B);
-		HAL_Delay(delay);
+	uint16_t idx = 0;
+
+	for(;;) {
+		DriverLED_WriteLED(&hDriverLed, idx);
+		idx = idx << 1;
+		if(idx==0) idx = 1;
+		HAL_Delay(500);
 	}
 }
 
@@ -88,7 +89,7 @@ int main(void)
 {
 
 	/* USER CODE BEGIN 1 */
-	uint16_t idx = 0;
+
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -113,33 +114,29 @@ int main(void)
 	MX_SPI3_Init();
 	/* USER CODE BEGIN 2 */
 
-	// Init GPIO Expander
-
-
-	//MCP23S17_WriteRegister(0X12, 0XFF); // Eteins toutes les LEDs de A
-	//MCP23S17_WriteRegister(0X13, 0XFF); // Eteins toutes les LEDs de B
 	if(HAL_OK != DriverLED_Init(&hDriverLed, &hspi3, VU_nCS_GPIO_Port, VU_nCS_Pin, VU_nRST_GPIO_Port, VU_nRST_Pin)){
 		while(1);
 	}
 
-
 	uint8_t uart2_chr;
 
-	HAL_UART_Receive_IT(&huart2, &uart2_chr, 1); // Pour autoriser la 1ère réception
+	HAL_UART_Receive(&huart2, &uart2_chr, 1, HAL_MAX_DELAY); // Pour autoriser la 1ère réception
 
+
+	char buffer[3];
+	uint8_t index = 0;
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
+		HAL_UART_Transmit(&huart2, (uint8_t *)&uart2_chr, 1, HAL_MAX_DELAY); // écho
+		HAL_UART_Receive(&huart2, &uart2_chr, 1, HAL_MAX_DELAY); // Pour ré-autoriser, à chaque fois, la réception
 
 		//  Q3 :
 		// HAL_UART_Transmit(&huart2, "Hello world\r\n", 13, 100);
-		DriverLED_WriteLED(&hDriverLed, idx);
-		idx = idx << 1;
-		if(idx==0) idx = 1;
-		HAL_Delay(1000);
+
 		//  Q4 :
 		//printf("Hello world\r\n");
 		//HAL_Delay(1000);
@@ -149,8 +146,24 @@ int main(void)
 
 		//MCP23S17_Chenillard(500);
 
-		HAL_UART_Transmit(&huart2, (uint8_t *)&uart2_chr, 1, HAL_MAX_DELAY); // écho
-		HAL_UART_Receive_IT(&huart2, &uart2_chr, 1); // Pour ré-autoriser, à chaque fois, la réception
+		//HAL_StatusTypeDef return_status = HAL_UART_Receive_IT(&huart2, &uart2_chr, 1); // Pour ré-autoriser, à chaque fois, la réception
+		//if (return_status) {
+		//if (HAL_UART_Receive(&huart2, &uart2_chr, 1)){
+		//	HAL_UART_Transmit(&huart2, (uint8_t *)&uart2_chr, 1, HAL_MAX_DELAY); // écho
+		//}
+
+		if (uart2_chr == '\r') // Si l'utilisateur appuie sur "Entrée"
+		{
+			index = 0; // Réinitialise l'index pour la prochaine saisie
+
+			uint16_t value_led = (uint16_t)strtol(buffer, NULL, 16);
+			DriverLED_WriteLED(&hDriverLed, value_led);
+		}
+		else
+		{
+			buffer[index++] = uart2_chr; // Stocke le caractère
+			if (index >= sizeof(buffer) - 1) index = 0; // Évite le dépassement de tableau
+		}
 
 		/* USER CODE END WHILE */
 

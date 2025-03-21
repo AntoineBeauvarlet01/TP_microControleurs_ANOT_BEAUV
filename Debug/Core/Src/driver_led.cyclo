@@ -1,4 +1,3 @@
 ../Core/Src/driver_led.c:12:19:DriverLED_Init	1
-../Core/Src/driver_led.c:31:6:DriverLED_WriteRegister	1
-../Core/Src/driver_led.c:42:6:DriverLED_WriteLED	1
-../Core/Src/driver_led.c:49:6:DriverLED_ClignoterLED	17
+../Core/Src/driver_led.c:32:6:DriverLED_WriteRegister	1
+../Core/Src/driver_led.c:44:6:DriverLED_WriteLED	1
