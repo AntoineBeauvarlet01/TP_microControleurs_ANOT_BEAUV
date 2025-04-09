@@ -187,8 +187,8 @@ Broches I2C sur le STM32 NUCLEO-L476RG :
 Le STM32L476RG dispose de plusieurs périphériques I2C (I2C1, I2C2, etc.).
 Les broches utilisées pour l'I2C dépendent du périphérique I2C sélectionné.
 Typiquement, pour l'I2C1, on retrouve:
->- PB8 : I2C1_SCL (Serial Clock)
->- PB9 : I2C1_SDA (Serial Data)
+>- PB10 : I2C2_SCL (Serial Clock)
+>- PB11 : I2C2_SDA (Serial Data)
 
 2. Activez l’I2C correspondant, laissez la configuration par défaut.
    
