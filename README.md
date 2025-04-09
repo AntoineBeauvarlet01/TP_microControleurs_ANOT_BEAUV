@@ -359,8 +359,85 @@ Modify CHIP_SSS_CTRL->I2S_SELECT 0x0000 // bits 1:0
 // Sélectionner LINEIN comme entrée pour HP_OUT
 Modify CHIP_ANA_CTRL->SELECT_HP 0x0001 // bit 6
 ```
+# la fonction HAL_I2C_Mem_Read()
+```
+#include "stm32fxxx_hal.h" // Remplacez par la librairie HAL appropriée à votre STM32
+#include <stdio.h>       // Pour printf
 
+// Définition de l'adresse I2C du CODEC
+#define SGTL5000_I2C_ADDR 0x14 << 1 // L'adresse 7 bits doit être décalée d'un bit vers la gauche pour l'adressage 8 bits
+#define SGTL5000_CHIP_ID_ADDR 0x0000
 
+// Déclaration du handle I2C (à initialiser ailleurs dans votre code)
+extern I2C_HandleTypeDef hi2c1; // Exemple: si vous utilisez l'instance I2C1
+
+uint16_t read_chip_id() {
+  HAL_StatusTypeDef status;
+  uint16_t chip_id_value;
+
+  // Lecture de 2 octets (16 bits) à partir du registre CHIP_ID
+  status = HAL_I2C_Mem_Read(&hi2c1, SGTL5000_I2C_ADDR, SGTL5000_CHIP_ID_ADDR, I2C_MEMADD_SIZE_16BIT, (uint8_t*)&chip_id_value, 2, HAL_MAX_DELAY);
+
+  if (status == HAL_OK) {
+    printf("Lecture du registre CHIP_ID (0x%04X) réussie.\n", SGTL5000_CHIP_ID_ADDR);
+    printf("Valeur lue : 0x%04X\n", __builtin_bswap16(chip_id_value)); // Inversion des octets pour l'endianness
+    return __builtin_bswap16(chip_id_value);
+  } else {
+    printf("Erreur lors de la lecture du registre CHIP_ID (0x%04X).\n", SGTL5000_CHIP_ID_ADDR);
+    printf("Code d'erreur HAL : %d\n", status);
+    return 0xFFFF; // Retourne une valeur d'erreur
+  }
+}
+
+int main(void) {
+  // Initialisation du microcontrôleur (clocks, périphériques, etc.)
+  HAL_Init();
+
+  // Initialisation de l'interface I2C (hi2c1 dans cet exemple)
+  // Assurez-vous que les broches I2C (SCL, SDA) sont correctement configurées
+  // dans votre fichier de configuration (par exemple, stm32fxxx_hal_msp.c)
+  MX_I2C1_Init(); // Fonction d'initialisation générée par STM32CubeIDE ou écrite manuellement
+
+  // Lecture de la valeur du registre CHIP_ID
+  uint16_t chip_id = read_chip_id();
+
+  // Vous pouvez ensuite utiliser la valeur de chip_id pour vérifier
+  // l'identité du CODEC SGTL5000 (consultez la documentation pour la valeur attendue).
+
+  while (1) {
+    // Boucle infinie
+  }
+}
+
+// Fonction d'initialisation de l'I2C1 (exemple pour STM32CubeIDE)
+void MX_I2C1_Init(void)
+{
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000; // Fréquence de l'horloge I2C (à adapter)
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler(); // Fonction de gestion des erreurs à implémenter
+  }
+}
+
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+```
 3. Observez les trames I2C à l’oscilloscope.
    
 4. Montrez à l’enseignant.
