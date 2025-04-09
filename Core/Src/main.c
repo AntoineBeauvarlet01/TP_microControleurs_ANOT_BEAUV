@@ -18,15 +18,17 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "dma.h"
+#include "i2c.h"
+#include "sai.h"
 #include "spi.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-//#include <stdio.h>
-//#include <stdint.h>
 #include "driver_led.h"
+#include "sgtl5000.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,6 +54,7 @@
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+void PeriphCommonClock_Config(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -104,40 +107,68 @@ int main(void)
 	/* Configure the system clock */
 	SystemClock_Config();
 
+	/* Configure the peripherals common clocks */
+	PeriphCommonClock_Config();
+
 	/* USER CODE BEGIN SysInit */
 
 	/* USER CODE END SysInit */
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
+	MX_DMA_Init();
 	MX_USART2_UART_Init();
 	MX_SPI3_Init();
+	MX_SAI2_Init();
+	MX_I2C2_Init();
 	/* USER CODE BEGIN 2 */
+	__HAL_SAI_ENABLE(&hsai_BlockA2); // Activation horloge MCLK
+
+	uint8_t chip_id_value = 0;
+	HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c2, CODEC_ADDR, CHIP_ID, I2C_MEMADD_SIZE_16BIT, &chip_id_value, sizeof(chip_id_value), HAL_MAX_DELAY);
+	if (status == HAL_OK)
+		printf("OK : %d\r\n", chip_id_value); // Affiche 160
+	else
+		printf("PAS OK : %d\r\n", chip_id_value);
+
+	SGTL5000_Init(&hi2c2);
+
+	//uint8_t sai;
+	//HAL_SAI_Receive_DMA(&hsai_BlockA2, &sai, 1);
+	//HAL_SAI_Transmit_DMA(&hsai_BlockA2, &sai, 1);
+
 
 	if(HAL_OK != DriverLED_Init(&hDriverLed, &hspi3, VU_nCS_GPIO_Port, VU_nCS_Pin, VU_nRST_GPIO_Port, VU_nRST_Pin)){
 		while(1);
 	}
 
-	uint8_t uart2_chr;
+	//uint8_t uart2_chr;
+	//HAL_UART_Receive(&huart2, &uart2_chr, 1, HAL_MAX_DELAY); // Pour autoriser la 1ère réception
 
-	HAL_UART_Receive(&huart2, &uart2_chr, 1, HAL_MAX_DELAY); // Pour autoriser la 1ère réception
 
-
-	char buffer[3];
-	uint8_t index = 0;
+	//char buffer[5];
+	//uint8_t index = 0;
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		HAL_UART_Transmit(&huart2, (uint8_t *)&uart2_chr, 1, HAL_MAX_DELAY); // écho
-		HAL_UART_Receive(&huart2, &uart2_chr, 1, HAL_MAX_DELAY); // Pour ré-autoriser, à chaque fois, la réception
+		// ---------- Ecriture I2C ----------
+		uint8_t reg_address = 0x0000;     // Adresse du registre à écrire
+		uint16_t data_to_write = 0x1234;  // Données à écrire
 
-		//  Q3 :
+		if (SGTL5000_WriteReg(&hi2c2, reg_address, data_to_write) == HAL_OK) {
+			printf("Ecriture reussie\r\n");
+		} else {
+			printf("Erreur ecriture\r\n");
+		}
+		HAL_Delay(2000);
+
+		// ---------- Q3 ----------
 		// HAL_UART_Transmit(&huart2, "Hello world\r\n", 13, 100);
 
-		//  Q4 :
+		// ----------Q4 ----------
 		//printf("Hello world\r\n");
 		//HAL_Delay(1000);
 
@@ -146,11 +177,10 @@ int main(void)
 
 		//MCP23S17_Chenillard(500);
 
-		//HAL_StatusTypeDef return_status = HAL_UART_Receive_IT(&huart2, &uart2_chr, 1); // Pour ré-autoriser, à chaque fois, la réception
-		//if (return_status) {
-		//if (HAL_UART_Receive(&huart2, &uart2_chr, 1)){
-		//	HAL_UART_Transmit(&huart2, (uint8_t *)&uart2_chr, 1, HAL_MAX_DELAY); // écho
-		//}
+		// ---------- DRIVER DE LEDS ----------
+		/*
+		HAL_UART_Transmit(&huart2, (uint8_t *)&uart2_chr, 1, HAL_MAX_DELAY); // écho
+		HAL_UART_Receive(&huart2, &uart2_chr, 1, HAL_MAX_DELAY); // Pour ré-autoriser, à chaque fois, la réception
 
 		if (uart2_chr == '\r') // Si l'utilisateur appuie sur "Entrée"
 		{
@@ -164,7 +194,7 @@ int main(void)
 			buffer[index++] = uart2_chr; // Stocke le caractère
 			if (index >= sizeof(buffer) - 1) index = 0; // Évite le dépassement de tableau
 		}
-
+		*/
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
@@ -216,6 +246,31 @@ void SystemClock_Config(void)
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
 	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+	{
+		Error_Handler();
+	}
+}
+
+/**
+ * @brief Peripherals Common Clock Configuration
+ * @retval None
+ */
+void PeriphCommonClock_Config(void)
+{
+	RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
+
+	/** Initializes the peripherals clock
+	 */
+	PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_SAI2;
+	PeriphClkInit.Sai2ClockSelection = RCC_SAI2CLKSOURCE_PLLSAI1;
+	PeriphClkInit.PLLSAI1.PLLSAI1Source = RCC_PLLSOURCE_HSI;
+	PeriphClkInit.PLLSAI1.PLLSAI1M = 1;
+	PeriphClkInit.PLLSAI1.PLLSAI1N = 13;
+	PeriphClkInit.PLLSAI1.PLLSAI1P = RCC_PLLP_DIV17;
+	PeriphClkInit.PLLSAI1.PLLSAI1Q = RCC_PLLQ_DIV2;
+	PeriphClkInit.PLLSAI1.PLLSAI1R = RCC_PLLR_DIV2;
+	PeriphClkInit.PLLSAI1.PLLSAI1ClockOut = RCC_PLLSAI1_SAI1CLK;
+	if (HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit) != HAL_OK)
 	{
 		Error_Handler();
 	}
