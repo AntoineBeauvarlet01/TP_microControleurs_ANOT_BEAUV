@@ -89,9 +89,6 @@ int main(void)
 >- En remontant le circuit on arrive a soit SPI1 soit SPI3 
 >- Dans Cube IDE SPI1 est bloqué donc c'est `SPI3` qui est utilisé
 
-
-
-
 3. Quels sont les paramètres à configurer dans STM32CubeIDE ?
 
 | Nom | Valeur |
@@ -186,7 +183,7 @@ Broches I2C sur le STM32 NUCLEO-L476RG :
 
 Le STM32L476RG dispose de plusieurs périphériques I2C (I2C1, I2C2, etc.).
 Les broches utilisées pour l'I2C dépendent du périphérique I2C sélectionné.
-Typiquement, pour l'I2C1, on retrouve:
+Typiquement, pour l'I2C2, on retrouve:
 >- PB10 : I2C2_SCL (Serial Clock)
 >- PB11 : I2C2_SDA (Serial Data)
 
@@ -223,7 +220,14 @@ reçoit pas d’horloge !
    On observe bien un retour sur la broche MCLK
    
 2. À l’aide de la fonction HAL_I2C_Mem_Read(), récupérez la valeur du registre CHIP_ID (addresse 0x0000). L’adresse I2C du CODEC est 0x14.
-   
+```
+HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c2, CODEC_ADDR, CHIP_ID, I2C_MEMADD_SIZE_16BIT, &chip_id_value, sizeof(chip_id_value), HAL_MAX_DELAY);
+	if (status == HAL_OK)
+		printf("OK : %d\r\n", chip_id_value); // Affiche 160
+	else
+		printf("PAS OK : %d\r\n", chip_id_value);
+```
+On obtient 160 pour la valeur du registre CHIP_ID.
 
 ## CONFIGURATION DU CHIP
 
@@ -234,109 +238,7 @@ Toutes les sorties (LINEOUT, HP_OUT, I2S_OUT) sont mises en sourdine par défaut
 ### Mise sous tension du chip et configurations d'alimentation
 
 Une fois les alimentations du chip activées, la séquence d'initialisation suivante doit être suivie. Veuillez noter que certaines étapes peuvent être facultatives ou que des valeurs différentes peuvent devoir être écrites en fonction de la tension d'alimentation utilisée et de la configuration souhaitée. La séquence d'initialisation ci-dessous suppose VDDIO = 3,3 V et VDDA = 1,8 V.
-```
-//--------------- Configuration de l'alimentation ----------------
-// NOTE : Ces 2 appels d'écriture suivants sont nécessaires UNIQUEMENT si VDDD est
-// piloté en interne par le chip
-// Configurer le niveau VDDD à 1,2 V (bits 3:0)
-Write CHIP_LINREG_CTRL 0x0008
-// Mettre sous tension le régulateur linéaire interne (Définir le bit 9)
-Write CHIP_ANA_POWER 0x7260
 
-// NOTE : Cet appel d'écriture suivant est nécessaire UNIQUEMENT si VDDD est
-// piloté en externe
-// Désactiver les alimentations de démarrage pour économiser de l'énergie (Effacer les bits 12 et 13)
-Write CHIP_ANA_POWER 0x4260
-
-// NOTE : Les appels d'écriture suivants sont nécessaires uniquement si les alimentations VDDA et
-// VDDIO sont inférieures à 3,1 V.
-// Activer l'oscillateur interne pour la pompe de charge (Définir le bit 11)
-Write CHIP_CLK_TOP_CTRL 0x0800
-// Activer la pompe de charge (Définir le bit 11)
-Write CHIP_ANA_POWER 0x4A60
-
-// NOTE : L'appel de modification suivant est uniquement nécessaire si VDDA et
-// VDDIO sont supérieures à 3,1 V
-// Configurer la pompe de charge pour utiliser le rail VDDIO (définir le bit 5 et le bit 6)
-Write CHIP_LINREG_CTRL 0x006C
-```
-```
-//---- Tension de référence et configuration du courant de polarisation ----
-// NOTE : La valeur écrite dans les 2 appels d'écriture suivants dépend
-// de la valeur de la tension VDDA.
-// Définir la tension de référence de masse, ADC, DAC (bits 8:4). La valeur doit
-// être définie sur VDDA/2. Cet exemple suppose VDDA = 1,8 V.
-VDDA/2 = 0,9 V.
-// Le courant de polarisation doit être défini sur 50% de la valeur nominale (bits 3:1)
-Write CHIP_REF_CTRL 0x004E
-// Définir la tension de référence LINEOUT à VDDIO/2 (1,65 V) (bits 5:0)
-// et le courant de polarisation (bits 11:8) à la valeur recommandée de 0,36 mA
-// pour une charge de 10 kOhm avec une capacité de 1,0 nF
-Write CHIP_LINE_OUT_CTRL 0x0322
-```
-```
-//------------ Autres configurations de blocs analogiques --------------
-// Configurer une vitesse de montée lente pour minimiser les bruits parasites (bit 0)
-Write CHIP_REF_CTRL 0x004F
-// Activer le mode de détection de court-circuit pour les canaux gauche/droite
-// et central du casque et définir le niveau de déclenchement du courant de détection de court-circuit
-// à 75 mA
-Write CHIP_SHORT_CTRL 0x1106
-// Activer la détection de passage par zéro si nécessaire pour HP_OUT (bit 5) et ADC (bit 1)
-Write CHIP_ANA_CTRL 0x0133
-```
-//------------ Mise sous tension des entrées/sorties/blocs numériques ---------
-// Mettre sous tension LINEOUT, HP, ADC, DAC
-Write CHIP_ANA_POWER 0x6AFF
-// Mettre sous tension les blocs numériques souhaités
-// I2S_IN (bit 0), I2S_OUT (bit 1), DAP (bit 4), DAC (bit 5),
-// ADC (bit 6) sont mis sous tension
-Write CHIP_DIG_POWER 0x0073
-```
-//---------------- Définir le niveau de volume LINEOUT -------------------
-// Définir le niveau de volume LINEOUT en fonction des valeurs de référence de tension (VAG)
-// en utilisant cette formule
-// Valeur = (int)(40*log(VAG_VAL/LO_VAGCNTRL) + 15)
-// En supposant que VAG_VAL et LO_VAGCNTRL sont définis respectivement sur 0,9 V et 1,65 V, le
-// volume LO gauche (bits 12:8) et le volume LO droit (bits 4:0) doivent être définis sur 5
-Write CHIP_LINE_OUT_VOL 0x0505
-```
-
-### Horloge Système MCLK et Horloge d'Échantillonnage
-```
-// Configurer l'horloge SYS_FS à 48 kHz
-// Configurer MCLK_FREQ à 256*Fs
-Modify CHIP_CLK_CTRL->SYS_FS 0x0002 // bits 3:2
-Modify CHIP_CLK_CTRL->MCLK_FREQ 0x0000 // bits 1:0
-// Configurer les horloges I2S en mode maître
-// NOTE : I2S LRCLK est la même que l'horloge d'échantillonnage du système
-Modify CHIP_I2S_CTRL->MS 0x0001 // bit 7
-```
-### Configuration de la PLL
-
-Ces étapes de programmation sont nécessaires uniquement lorsque la PLL est utilisée. Référez-vous à "Using the PLL - Asynchronous SYS_MCLK input" pour plus de détails sur quand utiliser la PLL.
-
-Pour éviter tout bruit parasite (pops/clicks), les sorties doivent être mises en sourdine pendant ces étapes de configuration du chip. Référez-vous à "Volume Control" pour le contrôle du volume et de la sourdine.
-```
-// Mettre sous tension la PLL
-Modify CHIP_ANA_POWER->PLL_POWERUP 0x0001 // bit 10
-Modify CHIP_ANA_POWER->VCOAMP_POWERUP 0x0001 // bit 8
-// NOTE : Cette étape est requise uniquement lorsque le SYS_MCLK externe
-// est supérieur à 17 MHz. Dans ce cas, l'horloge SYS_MCLK externe
-// doit être divisée par 2
-Modify CHIP_CLK_TOP_CTRL->INPUT_FREQ_DIV2 0x0001 // bit 3
-Sys_MCLK_Input_Freq = Sys_MCLK_Input_Freq/2;
-// La fréquence de sortie de la PLL est différente en fonction de la fréquence d'échantillonnage utilisée.
-if (Sys_Fs_Rate == 44.1 kHz)
- PLL_Output_Freq = 180.6336 MHz
-else
- PLL_Output_Freq = 196.608 MHz
-// Définir les diviseurs de la PLL
-Int_Divisor = floor(PLL_Output_Freq/Sys_MCLK_Input_Freq)
-Frac_Divisor = ((PLL_Output_Freq/Sys_MCLK_Input_Freq) - Int_Divisor)*2048
-Modify CHIP_PLL_CTRL->INT_DIVISOR Int_Divisor // bits 15:11
-Modify CHIP_PLL_CTRL->FRAC_DIVISOR Frac_Divisor // bits 10:0
-```
 ### Routage des Entrées/Sorties
 
 Pour éviter tout bruit parasite (pops/clicks), les sorties doivent être mises en sourdine pendant ces étapes de configuration du chip. Référez-vous à "Volume Control" pour le contrôle du volume et de la sourdine.
@@ -359,85 +261,7 @@ Modify CHIP_SSS_CTRL->I2S_SELECT 0x0000 // bits 1:0
 // Sélectionner LINEIN comme entrée pour HP_OUT
 Modify CHIP_ANA_CTRL->SELECT_HP 0x0001 // bit 6
 ```
-# la fonction HAL_I2C_Mem_Read()
-```
-#include "stm32fxxx_hal.h" // Remplacez par la librairie HAL appropriée à votre STM32
-#include <stdio.h>       // Pour printf
 
-// Définition de l'adresse I2C du CODEC
-#define SGTL5000_I2C_ADDR 0x14 << 1 // L'adresse 7 bits doit être décalée d'un bit vers la gauche pour l'adressage 8 bits
-#define SGTL5000_CHIP_ID_ADDR 0x0000
-
-// Déclaration du handle I2C (à initialiser ailleurs dans votre code)
-extern I2C_HandleTypeDef hi2c1; // Exemple: si vous utilisez l'instance I2C1
-
-uint16_t read_chip_id() {
-  HAL_StatusTypeDef status;
-  uint16_t chip_id_value;
-
-  // Lecture de 2 octets (16 bits) à partir du registre CHIP_ID
-  status = HAL_I2C_Mem_Read(&hi2c1, SGTL5000_I2C_ADDR, SGTL5000_CHIP_ID_ADDR, I2C_MEMADD_SIZE_16BIT, (uint8_t*)&chip_id_value, 2, HAL_MAX_DELAY);
-
-  if (status == HAL_OK) {
-    printf("Lecture du registre CHIP_ID (0x%04X) réussie.\n", SGTL5000_CHIP_ID_ADDR);
-    printf("Valeur lue : 0x%04X\n", __builtin_bswap16(chip_id_value)); // Inversion des octets pour l'endianness
-    return __builtin_bswap16(chip_id_value);
-  } else {
-    printf("Erreur lors de la lecture du registre CHIP_ID (0x%04X).\n", SGTL5000_CHIP_ID_ADDR);
-    printf("Code d'erreur HAL : %d\n", status);
-    return 0xFFFF; // Retourne une valeur d'erreur
-  }
-}
-
-int main(void) {
-  // Initialisation du microcontrôleur (clocks, périphériques, etc.)
-  HAL_Init();
-
-  // Initialisation de l'interface I2C (hi2c1 dans cet exemple)
-  // Assurez-vous que les broches I2C (SCL, SDA) sont correctement configurées
-  // dans votre fichier de configuration (par exemple, stm32fxxx_hal_msp.c)
-  MX_I2C1_Init(); // Fonction d'initialisation générée par STM32CubeIDE ou écrite manuellement
-
-  // Lecture de la valeur du registre CHIP_ID
-  uint16_t chip_id = read_chip_id();
-
-  // Vous pouvez ensuite utiliser la valeur de chip_id pour vérifier
-  // l'identité du CODEC SGTL5000 (consultez la documentation pour la valeur attendue).
-
-  while (1) {
-    // Boucle infinie
-  }
-}
-
-// Fonction d'initialisation de l'I2C1 (exemple pour STM32CubeIDE)
-void MX_I2C1_Init(void)
-{
-  hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000; // Fréquence de l'horloge I2C (à adapter)
-  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-  hi2c1.Init.OwnAddress1 = 0;
-  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-  hi2c1.Init.OwnAddress2 = 0;
-  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
-  {
-    Error_Handler(); // Fonction de gestion des erreurs à implémenter
-  }
-}
-
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
-}
-```
 3. Observez les trames I2C à l’oscilloscope.
    
 4. Montrez à l’enseignant.
@@ -457,118 +281,68 @@ void Error_Handler(void)
 >- CHIP_ADCDAC_CTRL
 >- CHIP_DAC_VOL
 
->- CHIP_ANA_POWER -> Section de la documentation décrivant le contrôle de l'alimentation analogique. Recherchez les bits permettant d'activer/désactiver les différents blocs analogiques (DAC, ADC, amplis casque, sortie ligne, etc.) et la référence de tension analogique (VAG).
->- CHIP_LINREG_CTRL -> Section traitant du contrôle des régulateurs linéaires internes. Vous y trouverez les bits pour configurer les tensions de sortie des régulateurs (VDDA, VDDIO) en fonction de votre alimentation.
->- CHIP_REF_CTRL -> Section concernant le contrôle de la référence interne. Cherchez les bits pour activer la référence, ajuster le courant de polarisation et potentiellement configurer d'autres aspects de la référence.
->- CHIP_LINE_OUT_CTRL -> Section dédiée au contrôle de la sortie ligne. Vous trouverez ici les bits pour activer/désactiver la sortie ligne, configurer le gain, le mode (single-ended/différentiel) et potentiellement d'autres options.
->- CHIP_SHORT_CTRL -> Section relative au contrôle de la protection contre les courts-circuits. Recherchez les bits pour activer la protection sur les différentes sorties analogiques et potentiellement configurer les seuils.
->- CHIP_ANA_CTRL -> Section traitant du contrôle analogique général. Vous pourriez y trouver des bits pour activer des fonctionnalités comme la détection de passage par zéro pour l'ADC et le DAC, ou d'autres réglages analogiques globaux.
->- CHIP_ANA_POWER -> Répétition du premier registre. Toujours dans la section de la documentation décrivant le contrôle de l'alimentation analogique.
-CHIP_DIG_POWER -> Section concernant le contrôle de l'alimentation numérique. Recherchez les bits pour activer/désactiver les différents blocs numériques (interface I2S, etc.).
->- CHIP_LINE_OUT_VOL -> Section traitant du contrôle du volume de la sortie ligne. Vous y trouverez la description du format des 16 bits représentant le niveau de volume pour les canaux gauche et droit.
->- CHIP_CLK_CTRL -> Section dédiée au contrôle de l'horloge. Recherchez les bits pour sélectionner la source de l'horloge (MCLK interne ou externe), configurer le diviseur de fréquence, etc.
->- CHIP_I2S_CTRL -> Section relative au contrôle de l'interface I2S. Vous y trouverez les bits pour configurer le mode (maître/esclave), le format des données (I2S standard, LJ, RJ), la longueur des données (16, 24, 32 bits), etc.
->- CHIP_ADCDAC_CTRL -> Section traitant du contrôle de l'ADC et du DAC. Recherchez les bits pour activer/désactiver l'ADC et le DAC, configurer le taux de suréchantillonnage du DAC, le mode de fonctionnement de l'ADC, etc.
->- CHIP_DAC_VOL -> Section concernant le contrôle du volume du DAC. Vous y trouverez la description du format des 16 bits représentant le niveau de volume pour les canaux gauche et droit du DAC.
-
-
-
-
-
 1. Créez une paire de fichier sgtl5000.c / sgtl5000.h
 
-2. Dans le fichier sgtl5000.c, créez une fonction d’initialisation.
-
-3. Dans cette fonction, écrivez le code permettant de configurer ces registres.
-
-# Fichier sgtl5000.h
+3. Dans le fichier sgtl5000.c, créez une fonction d’initialisation.
 ```
-#ifndef SGTL5000_H_
-#define SGTL5000_H_
-#include "stm32l4xx_hal.h"
-
-// Adresses des registres du SGTL5000
-#define CHIP_LINREG_CTRL 0x0006
-#define CHIP_ANA_POWER 0x0002
-#define CHIP_CLK_TOP_CTRL 0x0004
-#define CHIP_REF_CTRL 0x000A
-#define CHIP_LINE_OUT_CTRL 0x0010
-#define CHIP_SHORT_CTRL 0x0014
-#define CHIP_ANA_CTRL 0x0016
-#define CHIP_DIG_POWER 0x003C
-#define CHIP_LINE_OUT_VOL 0x0020
-#define CHIP_CLK_CTRL 0x0000
-#define CHIP_I2S_CTRL 0x003A
-#define CHIP_PLL_CTRL 0x0008
-#define CHIP_SSS_CTRL 0x002E
-
-// Fonction d'initialisation
-void SGTL5000_Init(SPI_HandleTypeDef *hi2c);
-
-// Fonction d'écriture de registre
-HAL_StatusTypeDef SGTL5000_WriteReg(SPI_HandleTypeDef *hi2c, uint8_t reg, uint16_t data);
-
-#endif /* SGTL5000_H_ */
-```
-# Fichier sgtl5000.c
-```
-#include "sgtl5000.h"
-// Fonction d'écriture de registre
-HAL_StatusTypeDef SGTL5000_WriteReg(SPI_HandleTypeDef *hi2c, uint8_t reg, uint16_t data) {
-    uint8_t tx_buffer[3];
-    tx_buffer[0] = (reg << 1); // Adresse du registre + bit d'écriture (0)
-    tx_buffer[1] = (data >> 8) & 0xFF; // Octet de poids fort
-    tx_buffer[2] = data & 0xFF; // Octet de poids faible
-    return HAL_I2C_Master_Transmit(hi2c, 0x0A << 1, tx_buffer, 3, HAL_MAX_DELAY); // adresse sgtl5000 = 0x0A
-}
-
-// Fonction d'initialisation
 void SGTL5000_Init(SPI_HandleTypeDef *hi2c) {
 
-    // Configuration de l'alimentation
-    SGTL5000_WriteReg(hi2c, CHIP_LINREG_CTRL, 0x0008);
-    SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x7260);
-    SGTL5000_WriteReg(hi2c, CHIP_CLK_TOP_CTRL, 0x0800);
-    SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x4A60);
-    SGTL5000_WriteReg(hi2c, CHIP_LINREG_CTRL, 0x006C);
+	// Configuration de l'alimentation
+	SGTL5000_WriteReg(hi2c, CHIP_LINREG_CTRL, 0x0008);
+	SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x7260);
+	SGTL5000_WriteReg(hi2c, CHIP_CLK_TOP_CTRL, 0x0800);
+	SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x4A60);
+	SGTL5000_WriteReg(hi2c, CHIP_LINREG_CTRL, 0x006C);
 
-    // Tension de référence et configuration du courant de polarisation
-    SGTL5000_WriteReg(hi2c, CHIP_REF_CTRL, 0x004E);
-    SGTL5000_WriteReg(hi2c, CHIP_LINE_OUT_CTRL, 0x0322);
+	// Tension de référence et configuration du courant de polarisation
+	SGTL5000_WriteReg(hi2c, CHIP_REF_CTRL, 0x004E);
+	SGTL5000_WriteReg(hi2c, CHIP_LINE_OUT_CTRL, 0x0322);
 
-    // Autres configurations de blocs analogiques
-    SGTL5000_WriteReg(hi2c, CHIP_REF_CTRL, 0x004F);
-    SGTL5000_WriteReg(hi2c, CHIP_SHORT_CTRL, 0x1106);
-    SGTL5000_WriteReg(hi2c, CHIP_ANA_CTRL, 0x0133);
-    
+	// Autres configurations de blocs analogiques
+	SGTL5000_WriteReg(hi2c, CHIP_REF_CTRL, 0x004F);
+	SGTL5000_WriteReg(hi2c, CHIP_SHORT_CTRL, 0x1106);
+	SGTL5000_WriteReg(hi2c, CHIP_ANA_CTRL, 0x0133);
+
 	// Mise sous tension des entrées/sorties/blocs numériques
-    SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x6AFF);
-    SGTL5000_WriteReg(hi2c, CHIP_DIG_POWER, 0x0073);
-    
+	SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x6AFF);
+	SGTL5000_WriteReg(hi2c, CHIP_DIG_POWER, 0x0073);
+
 	// Définir le niveau de volume LINEOUT
-    SGTL5000_WriteReg(hi2c, CHIP_LINE_OUT_VOL, 0x0505);
-    
+	SGTL5000_WriteReg(hi2c, CHIP_LINE_OUT_VOL, 0x0505);
+
 	// Horloge Système MCLK et Horloge d'Échantillonnage
-    SGTL5000_WriteReg(hi2c, CHIP_CLK_CTRL, 0x0002);
-    SGTL5000_WriteReg(hi2c, CHIP_CLK_CTRL, 0x0000);
-    SGTL5000_WriteReg(hi2c, CHIP_I2S_CTRL, 0x0001);
-    
+	SGTL5000_WriteReg(hi2c, CHIP_CLK_CTRL, 0x0002);
+	SGTL5000_WriteReg(hi2c, CHIP_CLK_CTRL, 0x0000);
+	SGTL5000_WriteReg(hi2c, CHIP_I2S_CTRL, 0x0001);
+
 	// Configuration de la PLL
-    SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x0400);
-    SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x0100);
-    SGTL5000_WriteReg(hi2c, CHIP_CLK_TOP_CTRL, 0x0008);
-    SGTL5000_WriteReg(hi2c, CHIP_PLL_CTRL, 0x6028);
-    SGTL5000_WriteReg(hi2c, CHIP_PLL_CTRL, 0x07D0);
-    
+	SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x0400);
+	SGTL5000_WriteReg(hi2c, CHIP_ANA_POWER, 0x0100);
+	SGTL5000_WriteReg(hi2c, CHIP_CLK_TOP_CTRL, 0x0008);
+	SGTL5000_WriteReg(hi2c, CHIP_PLL_CTRL, 0x6028);
+	SGTL5000_WriteReg(hi2c, CHIP_PLL_CTRL, 0x07D0);
+
 	// Routage des Entrées/Sorties
-    SGTL5000_WriteReg(hi2c, CHIP_SSS_CTRL, 0x0001);
-    SGTL5000_WriteReg(hi2c, CHIP_SSS_CTRL, 0x0003);
-    SGTL5000_WriteReg(hi2c, CHIP_ANA_CTRL, 0x0000);
-    SGTL5000_WriteReg(hi2c, CHIP_ANA_CTRL, 0x0000);
-    SGTL5000_WriteReg(hi2c, CHIP_SSS_CTRL, 0x0000);
-    SGTL5000_WriteReg(hi2c, CHIP_ANA_CTRL, 0x0040);
+	SGTL5000_WriteReg(hi2c, CHIP_SSS_CTRL, 0x0001);
+	SGTL5000_WriteReg(hi2c, CHIP_SSS_CTRL, 0x0003);
+	SGTL5000_WriteReg(hi2c, CHIP_ANA_CTRL, 0x0000);
+	SGTL5000_WriteReg(hi2c, CHIP_ANA_CTRL, 0x0000);
+	SGTL5000_WriteReg(hi2c, CHIP_SSS_CTRL, 0x0000);
+	SGTL5000_WriteReg(hi2c, CHIP_ANA_CTRL, 0x0040);
 }
 ```
+
+4. Dans cette fonction, écrivez le code permettant de configurer ces registres.
+```
+HAL_StatusTypeDef SGTL5000_WriteReg(SPI_HandleTypeDef *hi2c, uint8_t reg, uint16_t data) {
+	uint8_t tx_buffer[3];
+	tx_buffer[0] = (reg << 1); // Adresse du registre + bit d'écriture (0)
+	tx_buffer[1] = (data >> 8) & 0xFF; // Octet de poids fort
+	tx_buffer[2] = data & 0xFF; // Octet de poids faible
+	return HAL_I2C_Master_Transmit(hi2c, 0x0A, tx_buffer, 3, HAL_MAX_DELAY); // adresse sgtl5000 = 0x0A
+}
+```
+
 ## 3.3 Signaux I2S
 1. Démarrez la réception et la transmission sur l’I2S avec le SAI :
 >- HAL_SAI_Receive_DMA();
