@@ -285,10 +285,10 @@ CHIP_DIG_POWER -> Section concernant le contrôle de l'alimentation numérique. 
 #define CHIP_SSS_CTRL 0x002E
 
 // Fonction d'initialisation
-void SGTL5000_Init(I2C_HandleTypeDef *hi2c);
+void SGTL5000_Init(SPI_HandleTypeDef *hi2c);
 
 // Fonction d'écriture de registre
-HAL_StatusTypeDef SGTL5000_WriteReg(I2C_HandleTypeDef *hi2c, uint8_t reg, uint16_t data);
+HAL_StatusTypeDef SGTL5000_WriteReg(SPI_HandleTypeDef *hi2c, uint8_t reg, uint16_t data);
 
 #endif /* SGTL5000_H_ */
 ```
@@ -296,7 +296,7 @@ HAL_StatusTypeDef SGTL5000_WriteReg(I2C_HandleTypeDef *hi2c, uint8_t reg, uint16
 ```
 #include "sgtl5000.h"
 // Fonction d'écriture de registre
-HAL_StatusTypeDef SGTL5000_WriteReg(I2C_HandleTypeDef *hi2c, uint8_t reg, uint16_t data) {
+HAL_StatusTypeDef SGTL5000_WriteReg(SPI_HandleTypeDef *hi2c, uint8_t reg, uint16_t data) {
     uint8_t tx_buffer[3];
     tx_buffer[0] = (reg << 1); // Adresse du registre + bit d'écriture (0)
     tx_buffer[1] = (data >> 8) & 0xFF; // Octet de poids fort
@@ -305,7 +305,7 @@ HAL_StatusTypeDef SGTL5000_WriteReg(I2C_HandleTypeDef *hi2c, uint8_t reg, uint16
 }
 
 // Fonction d'initialisation
-void SGTL5000_Init(I2C_HandleTypeDef *hi2c) {
+void SGTL5000_Init(SPI_HandleTypeDef *hi2c) {
 
     // Configuration de l'alimentation
     SGTL5000_WriteReg(hi2c, CHIP_LINREG_CTRL, 0x0008);
@@ -353,8 +353,8 @@ void SGTL5000_Init(I2C_HandleTypeDef *hi2c) {
 ```
 ## 3.3 Signaux I2S
 1. Démarrez la réception et la transmission sur l’I2S avec le SAI :
->- HAL_SAI_Receive_DMA()
->- HAL_SAI_Transmit_DMA()
+>- HAL_SAI_Receive_DMA();
+>- HAL_SAI_Transmit_DMA();
 
 2. Observez à l’oscilloscope les différents signaux d’horloge.
 
