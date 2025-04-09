@@ -179,8 +179,6 @@ Les configurations suivantes sont à faire sur le logiciel STM32CubeIDE dans la 
 1. Quelles pins sont utilisées pour l’I2C ? À quel I2C cela correspond dans leSTM32 ?
 ![alt text](image-7.png)
 
-Broches I2C sur le STM32 NUCLEO-L476RG : 
-
 Le STM32L476RG dispose de plusieurs périphériques I2C (I2C1, I2C2, etc.).
 Les broches utilisées pour l'I2C dépendent du périphérique I2C sélectionné.
 Typiquement, pour l'I2C2, on retrouve:
@@ -219,7 +217,7 @@ reçoit pas d’horloge !
 1. À l’aide d’un oscilloscope, vérifiez la présence d’une horloge sur le signal MCLK.
    On observe bien un retour sur la broche MCLK
    
-2. À l’aide de la fonction HAL_I2C_Mem_Read(), récupérez la valeur du registre CHIP_ID (addresse 0x0000). L’adresse I2C du CODEC est 0x14.
+3. À l’aide de la fonction HAL_I2C_Mem_Read(), récupérez la valeur du registre CHIP_ID (addresse 0x0000). L’adresse I2C du CODEC est 0x14.
 ```
 HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c2, CODEC_ADDR, CHIP_ID, I2C_MEMADD_SIZE_16BIT, &chip_id_value, sizeof(chip_id_value), HAL_MAX_DELAY);
 	if (status == HAL_OK)
@@ -228,39 +226,6 @@ HAL_StatusTypeDef status = HAL_I2C_Mem_Read(&hi2c2, CODEC_ADDR, CHIP_ID, I2C_MEM
 		printf("PAS OK : %d\r\n", chip_id_value);
 ```
 On obtient 160 pour la valeur du registre CHIP_ID.
-
-## CONFIGURATION DU CHIP
-
-Toutes les sorties (LINEOUT, HP_OUT, I2S_OUT) sont mises en sourdine par défaut à la mise sous tension. Pour éviter tout bruit parasite (pops/clicks), les sorties doivent rester en sourdine pendant ces étapes de configuration du chip. Référez-vous au Contrôle du Volume pour le contrôle du volume et de la sourdine.
-
-## Initialisation
-
-### Mise sous tension du chip et configurations d'alimentation
-
-Une fois les alimentations du chip activées, la séquence d'initialisation suivante doit être suivie. Veuillez noter que certaines étapes peuvent être facultatives ou que des valeurs différentes peuvent devoir être écrites en fonction de la tension d'alimentation utilisée et de la configuration souhaitée. La séquence d'initialisation ci-dessous suppose VDDIO = 3,3 V et VDDA = 1,8 V.
-
-### Routage des Entrées/Sorties
-
-Pour éviter tout bruit parasite (pops/clicks), les sorties doivent être mises en sourdine pendant ces étapes de configuration du chip. Référez-vous à "Volume Control" pour le contrôle du volume et de la sourdine.
-
-Quelques exemples de routage sont présentés ci-dessous :
-```
-// Exemple 1 : I2S_IN -> DAP -> DAC -> LINEOUT, HP_OUT
-// Router I2S_IN vers DAP
-Modify CHIP_SSS_CTRL->DAP_SELECT 0x0001 // bits 7:6
-// Router DAP vers DAC
-Modify CHIP_SSS_CTRL->DAC_SELECT 0x0003 // bits 5:4
-// Sélectionner DAC comme entrée pour HP_OUT
-Modify CHIP_ANA_CTRL->SELECT_HP 0x0000 // bit 6
-// Exemple 2 : MIC_IN -> ADC -> I2S_OUT
-// Définir l'entrée ADC à MIC_IN
-Modify CHIP_ANA_CTRL->SELECT_ADC 0x0000 // bit 2
-// Router ADC vers I2S_OUT
-Modify CHIP_SSS_CTRL->I2S_SELECT 0x0000 // bits 1:0
-// Exemple 3 : LINEIN -> HP_OUT
-// Sélectionner LINEIN comme entrée pour HP_OUT
-Modify CHIP_ANA_CTRL->SELECT_HP 0x0001 // bit 6
-```
 
 3. Observez les trames I2C à l’oscilloscope.
    
