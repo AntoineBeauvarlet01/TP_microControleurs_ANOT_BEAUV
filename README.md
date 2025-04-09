@@ -243,6 +243,19 @@ reçoit pas d’horloge !
 >- CHIP_ADCDAC_CTRL
 >- CHIP_DAC_VOL
 
+>- CHIP_ANA_POWER -> Section de la documentation décrivant le contrôle de l'alimentation analogique. Recherchez les bits permettant d'activer/désactiver les différents blocs analogiques (DAC, ADC, amplis casque, sortie ligne, etc.) et la référence de tension analogique (VAG).
+>- CHIP_LINREG_CTRL -> Section traitant du contrôle des régulateurs linéaires internes. Vous y trouverez les bits pour configurer les tensions de sortie des régulateurs (VDDA, VDDIO) en fonction de votre alimentation.
+>- CHIP_REF_CTRL -> Section concernant le contrôle de la référence interne. Cherchez les bits pour activer la référence, ajuster le courant de polarisation et potentiellement configurer d'autres aspects de la référence.
+>- CHIP_LINE_OUT_CTRL -> Section dédiée au contrôle de la sortie ligne. Vous trouverez ici les bits pour activer/désactiver la sortie ligne, configurer le gain, le mode (single-ended/différentiel) et potentiellement d'autres options.
+>- CHIP_SHORT_CTRL -> Section relative au contrôle de la protection contre les courts-circuits. Recherchez les bits pour activer la protection sur les différentes sorties analogiques et potentiellement configurer les seuils.
+>- CHIP_ANA_CTRL -> Section traitant du contrôle analogique général. Vous pourriez y trouver des bits pour activer des fonctionnalités comme la détection de passage par zéro pour l'ADC et le DAC, ou d'autres réglages analogiques globaux.
+>- CHIP_ANA_POWER -> Répétition du premier registre. Toujours dans la section de la documentation décrivant le contrôle de l'alimentation analogique.
+CHIP_DIG_POWER -> Section concernant le contrôle de l'alimentation numérique. Recherchez les bits pour activer/désactiver les différents blocs numériques (interface I2S, etc.).
+>- CHIP_LINE_OUT_VOL -> Section traitant du contrôle du volume de la sortie ligne. Vous y trouverez la description du format des 16 bits représentant le niveau de volume pour les canaux gauche et droit.
+>- CHIP_CLK_CTRL -> Section dédiée au contrôle de l'horloge. Recherchez les bits pour sélectionner la source de l'horloge (MCLK interne ou externe), configurer le diviseur de fréquence, etc.
+>- CHIP_I2S_CTRL -> Section relative au contrôle de l'interface I2S. Vous y trouverez les bits pour configurer le mode (maître/esclave), le format des données (I2S standard, LJ, RJ), la longueur des données (16, 24, 32 bits), etc.
+>- CHIP_ADCDAC_CTRL -> Section traitant du contrôle de l'ADC et du DAC. Recherchez les bits pour activer/désactiver l'ADC et le DAC, configurer le taux de suréchantillonnage du DAC, le mode de fonctionnement de l'ADC, etc.
+>- CHIP_DAC_VOL -> Section concernant le contrôle du volume du DAC. Vous y trouverez la description du format des 16 bits représentant le niveau de volume pour les canaux gauche et droit du DAC.
 
 ## CONFIGURATION DU CHIP
 
