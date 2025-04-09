@@ -224,7 +224,7 @@ reçoit pas d’horloge !
    
 2. À l’aide de la fonction HAL_I2C_Mem_Read(), récupérez la valeur du registre CHIP_ID (addresse 0x0000). L’adresse I2C du CODEC est 0x14.
    
-```
+
 ## CONFIGURATION DU CHIP
 
 Toutes les sorties (LINEOUT, HP_OUT, I2S_OUT) sont mises en sourdine par défaut à la mise sous tension. Pour éviter tout bruit parasite (pops/clicks), les sorties doivent rester en sourdine pendant ces étapes de configuration du chip. Référez-vous au Contrôle du Volume pour le contrôle du volume et de la sourdine.
@@ -358,9 +358,6 @@ Modify CHIP_SSS_CTRL->I2S_SELECT 0x0000 // bits 1:0
 // Exemple 3 : LINEIN -> HP_OUT
 // Sélectionner LINEIN comme entrée pour HP_OUT
 Modify CHIP_ANA_CTRL->SELECT_HP 0x0001 // bit 6
-```
-
-
 ```
 
 
