@@ -224,6 +224,146 @@ reçoit pas d’horloge !
    
 2. À l’aide de la fonction HAL_I2C_Mem_Read(), récupérez la valeur du registre CHIP_ID (addresse 0x0000). L’adresse I2C du CODEC est 0x14.
    
+```
+## CONFIGURATION DU CHIP
+
+Toutes les sorties (LINEOUT, HP_OUT, I2S_OUT) sont mises en sourdine par défaut à la mise sous tension. Pour éviter tout bruit parasite (pops/clicks), les sorties doivent rester en sourdine pendant ces étapes de configuration du chip. Référez-vous au Contrôle du Volume pour le contrôle du volume et de la sourdine.
+
+## Initialisation
+
+### Mise sous tension du chip et configurations d'alimentation
+
+Une fois les alimentations du chip activées, la séquence d'initialisation suivante doit être suivie. Veuillez noter que certaines étapes peuvent être facultatives ou que des valeurs différentes peuvent devoir être écrites en fonction de la tension d'alimentation utilisée et de la configuration souhaitée. La séquence d'initialisation ci-dessous suppose VDDIO = 3,3 V et VDDA = 1,8 V.
+```
+//--------------- Configuration de l'alimentation ----------------
+// NOTE : Ces 2 appels d'écriture suivants sont nécessaires UNIQUEMENT si VDDD est
+// piloté en interne par le chip
+// Configurer le niveau VDDD à 1,2 V (bits 3:0)
+Write CHIP_LINREG_CTRL 0x0008
+// Mettre sous tension le régulateur linéaire interne (Définir le bit 9)
+Write CHIP_ANA_POWER 0x7260
+
+// NOTE : Cet appel d'écriture suivant est nécessaire UNIQUEMENT si VDDD est
+// piloté en externe
+// Désactiver les alimentations de démarrage pour économiser de l'énergie (Effacer les bits 12 et 13)
+Write CHIP_ANA_POWER 0x4260
+
+// NOTE : Les appels d'écriture suivants sont nécessaires uniquement si les alimentations VDDA et
+// VDDIO sont inférieures à 3,1 V.
+// Activer l'oscillateur interne pour la pompe de charge (Définir le bit 11)
+Write CHIP_CLK_TOP_CTRL 0x0800
+// Activer la pompe de charge (Définir le bit 11)
+Write CHIP_ANA_POWER 0x4A60
+
+// NOTE : L'appel de modification suivant est uniquement nécessaire si VDDA et
+// VDDIO sont supérieures à 3,1 V
+// Configurer la pompe de charge pour utiliser le rail VDDIO (définir le bit 5 et le bit 6)
+Write CHIP_LINREG_CTRL 0x006C
+```
+```
+//---- Tension de référence et configuration du courant de polarisation ----
+// NOTE : La valeur écrite dans les 2 appels d'écriture suivants dépend
+// de la valeur de la tension VDDA.
+// Définir la tension de référence de masse, ADC, DAC (bits 8:4). La valeur doit
+// être définie sur VDDA/2. Cet exemple suppose VDDA = 1,8 V.
+VDDA/2 = 0,9 V.
+// Le courant de polarisation doit être défini sur 50% de la valeur nominale (bits 3:1)
+Write CHIP_REF_CTRL 0x004E
+// Définir la tension de référence LINEOUT à VDDIO/2 (1,65 V) (bits 5:0)
+// et le courant de polarisation (bits 11:8) à la valeur recommandée de 0,36 mA
+// pour une charge de 10 kOhm avec une capacité de 1,0 nF
+Write CHIP_LINE_OUT_CTRL 0x0322
+```
+```
+//------------ Autres configurations de blocs analogiques --------------
+// Configurer une vitesse de montée lente pour minimiser les bruits parasites (bit 0)
+Write CHIP_REF_CTRL 0x004F
+// Activer le mode de détection de court-circuit pour les canaux gauche/droite
+// et central du casque et définir le niveau de déclenchement du courant de détection de court-circuit
+// à 75 mA
+Write CHIP_SHORT_CTRL 0x1106
+// Activer la détection de passage par zéro si nécessaire pour HP_OUT (bit 5) et ADC (bit 1)
+Write CHIP_ANA_CTRL 0x0133
+```
+//------------ Mise sous tension des entrées/sorties/blocs numériques ---------
+// Mettre sous tension LINEOUT, HP, ADC, DAC
+Write CHIP_ANA_POWER 0x6AFF
+// Mettre sous tension les blocs numériques souhaités
+// I2S_IN (bit 0), I2S_OUT (bit 1), DAP (bit 4), DAC (bit 5),
+// ADC (bit 6) sont mis sous tension
+Write CHIP_DIG_POWER 0x0073
+```
+//---------------- Définir le niveau de volume LINEOUT -------------------
+// Définir le niveau de volume LINEOUT en fonction des valeurs de référence de tension (VAG)
+// en utilisant cette formule
+// Valeur = (int)(40*log(VAG_VAL/LO_VAGCNTRL) + 15)
+// En supposant que VAG_VAL et LO_VAGCNTRL sont définis respectivement sur 0,9 V et 1,65 V, le
+// volume LO gauche (bits 12:8) et le volume LO droit (bits 4:0) doivent être définis sur 5
+Write CHIP_LINE_OUT_VOL 0x0505
+```
+
+### Horloge Système MCLK et Horloge d'Échantillonnage
+```
+// Configurer l'horloge SYS_FS à 48 kHz
+// Configurer MCLK_FREQ à 256*Fs
+Modify CHIP_CLK_CTRL->SYS_FS 0x0002 // bits 3:2
+Modify CHIP_CLK_CTRL->MCLK_FREQ 0x0000 // bits 1:0
+// Configurer les horloges I2S en mode maître
+// NOTE : I2S LRCLK est la même que l'horloge d'échantillonnage du système
+Modify CHIP_I2S_CTRL->MS 0x0001 // bit 7
+```
+### Configuration de la PLL
+
+Ces étapes de programmation sont nécessaires uniquement lorsque la PLL est utilisée. Référez-vous à "Using the PLL - Asynchronous SYS_MCLK input" pour plus de détails sur quand utiliser la PLL.
+
+Pour éviter tout bruit parasite (pops/clicks), les sorties doivent être mises en sourdine pendant ces étapes de configuration du chip. Référez-vous à "Volume Control" pour le contrôle du volume et de la sourdine.
+```
+// Mettre sous tension la PLL
+Modify CHIP_ANA_POWER->PLL_POWERUP 0x0001 // bit 10
+Modify CHIP_ANA_POWER->VCOAMP_POWERUP 0x0001 // bit 8
+// NOTE : Cette étape est requise uniquement lorsque le SYS_MCLK externe
+// est supérieur à 17 MHz. Dans ce cas, l'horloge SYS_MCLK externe
+// doit être divisée par 2
+Modify CHIP_CLK_TOP_CTRL->INPUT_FREQ_DIV2 0x0001 // bit 3
+Sys_MCLK_Input_Freq = Sys_MCLK_Input_Freq/2;
+// La fréquence de sortie de la PLL est différente en fonction de la fréquence d'échantillonnage utilisée.
+if (Sys_Fs_Rate == 44.1 kHz)
+ PLL_Output_Freq = 180.6336 MHz
+else
+ PLL_Output_Freq = 196.608 MHz
+// Définir les diviseurs de la PLL
+Int_Divisor = floor(PLL_Output_Freq/Sys_MCLK_Input_Freq)
+Frac_Divisor = ((PLL_Output_Freq/Sys_MCLK_Input_Freq) - Int_Divisor)*2048
+Modify CHIP_PLL_CTRL->INT_DIVISOR Int_Divisor // bits 15:11
+Modify CHIP_PLL_CTRL->FRAC_DIVISOR Frac_Divisor // bits 10:0
+```
+### Routage des Entrées/Sorties
+
+Pour éviter tout bruit parasite (pops/clicks), les sorties doivent être mises en sourdine pendant ces étapes de configuration du chip. Référez-vous à "Volume Control" pour le contrôle du volume et de la sourdine.
+
+Quelques exemples de routage sont présentés ci-dessous :
+```
+// Exemple 1 : I2S_IN -> DAP -> DAC -> LINEOUT, HP_OUT
+// Router I2S_IN vers DAP
+Modify CHIP_SSS_CTRL->DAP_SELECT 0x0001 // bits 7:6
+// Router DAP vers DAC
+Modify CHIP_SSS_CTRL->DAC_SELECT 0x0003 // bits 5:4
+// Sélectionner DAC comme entrée pour HP_OUT
+Modify CHIP_ANA_CTRL->SELECT_HP 0x0000 // bit 6
+// Exemple 2 : MIC_IN -> ADC -> I2S_OUT
+// Définir l'entrée ADC à MIC_IN
+Modify CHIP_ANA_CTRL->SELECT_ADC 0x0000 // bit 2
+// Router ADC vers I2S_OUT
+Modify CHIP_SSS_CTRL->I2S_SELECT 0x0000 // bits 1:0
+// Exemple 3 : LINEIN -> HP_OUT
+// Sélectionner LINEIN comme entrée pour HP_OUT
+Modify CHIP_ANA_CTRL->SELECT_HP 0x0001 // bit 6
+```
+
+
+```
+
+
 3. Observez les trames I2C à l’oscilloscope.
    
 4. Montrez à l’enseignant.
@@ -256,6 +396,10 @@ CHIP_DIG_POWER -> Section concernant le contrôle de l'alimentation numérique. 
 >- CHIP_I2S_CTRL -> Section relative au contrôle de l'interface I2S. Vous y trouverez les bits pour configurer le mode (maître/esclave), le format des données (I2S standard, LJ, RJ), la longueur des données (16, 24, 32 bits), etc.
 >- CHIP_ADCDAC_CTRL -> Section traitant du contrôle de l'ADC et du DAC. Recherchez les bits pour activer/désactiver l'ADC et le DAC, configurer le taux de suréchantillonnage du DAC, le mode de fonctionnement de l'ADC, etc.
 >- CHIP_DAC_VOL -> Section concernant le contrôle du volume du DAC. Vous y trouverez la description du format des 16 bits représentant le niveau de volume pour les canaux gauche et droit du DAC.
+
+
+
+
 
 1. Créez une paire de fichier sgtl5000.c / sgtl5000.h
 
