@@ -173,6 +173,7 @@ Les configurations suivantes sont à faire sur le logiciel STM32CubeIDE dans la 
 
 1. Quelles pins sont utilisées pour l’I2C ? À quel I2C cela correspond dans leSTM32 ?
 ![alt text](image-7.png)
+
 Broches I2C sur le STM32 NUCLEO-L476RG : 
 
 Le STM32L476RG dispose de plusieurs périphériques I2C (I2C1, I2C2, etc.).
